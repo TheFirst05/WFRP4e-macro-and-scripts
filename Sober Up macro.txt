@@ -1,0 +1,66 @@
+const resist = async function (actor) {
+	const test = await actor.setupSkill(game.i18n.translations.NAME.ConsumeAlcohol); //this roll will decide the duration of the Consume Alcohol effect based on when it was obtained.
+	await test.roll();
+
+	const test1 = await actor.setupSkill(game.i18n.translations.NAME.ConsumeAlcohol); //this roll will decide the duration and trigger of the Hangover effect.
+	await test1.roll();
+
+
+	const SL = test.result.SL;
+	const SL1 = test1.result.SL;
+
+	const partialname = "Consume";
+	const wantedEffect = myactor.effects.filter(e => e.name.includes(partialname)); //finds all Consume Alcohol Effects
+
+	const lastdrunk = wantedEffect[wantedEffect.length - 1]; //finds the most recently added Consume Alcohol Effect added.
+	const drunkTime = lastdrunk.duration.startTime; //defines the beginning of the Hangover based on the last Consume Alcohol Effect gained
+	const nowTime = game.time.worldTime; //time at which the macro was used
+	const hangoverDuration = 5 - SL1;
+
+	const change = wantedEffect.map(e => ({
+		_id: e.id,
+		"duration.seconds": ((10 - SL) * 3600)
+	})); // defines the duration of all the Consume Alcohol Effects, enabled and disabled
+	await actor.updateEmbeddedDocuments("ActiveEffect", change);  // updated the duration
+
+	actor.createEmbeddedDocuments("ActiveEffect", [{
+		name: "Hangover",
+		duration: {
+			seconds: hangoverDuration * 3600,
+			startTime: drunkTime + ((10 - SL) * 3600)
+		},
+		flags: {
+			wfrp4e: {
+				effectApplication: "actor",
+				effectTrigger: "prepareData",
+				script: "const effectThis = this.effect.duration.startTime\nif (effectThis <= game.time.worldTime) {\n\nlet fatigued = args.actor.hasCondition(\"fatigued\")\nif (!fatigued) {\n\targs.actor.addCondition(\"fatigued\");\n\tui.notifications.notify( args.actor.name + \" is hungover! delete the effect if you remove the hangover early\")\n\t}\n}"
+			}
+		},
+		icon: "icons/svg/daze.svg"
+	}] //creates the hangover effect
+	);
+
+	let elapsedTime = nowTime - drunkTime; // time since you last drank
+	elapsedTime = (elapsedTime / 3600); // convert to hours
+	let remainTime = (10 - SL) - elapsedTime; // how much duration has been used.
+	let remainTimeHours = Math.ceil(remainTime);
+
+	if (remainTime > 0) {
+		ChatMessage.create({
+			content: myactor.name + " will remain drunk for almost " + remainTimeHours + " hours and will be hangover for " + hangoverDuration + " hours."
+		})
+	} else if (remainTime < 0) {
+		ChatMessage.create({
+			content: myactor.name + "  will be hangover for " + hangoverDuration + " hours."
+		})
+	};
+}
+
+let myspeaker = ChatMessage.getSpeaker();
+let myactor;
+if (speaker.token) myactor = game.actors.tokens[myspeaker.token];
+if (!myactor) myactor = game.actors.get(myspeaker.actor);
+
+if (myactor) {
+	resist(myactor);
+}

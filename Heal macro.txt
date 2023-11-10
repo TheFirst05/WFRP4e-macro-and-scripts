@@ -1,0 +1,27 @@
+let test = await actor.setupSkill(game.i18n.translations.NAME.Heal);
+await test.roll();
+
+let SL = test.result.SL;
+let intmod = actor.characteristics.int.bonus;
+let totalheal = Number(intmod) + Number(SL);
+
+if (test.result.outcome === "failure" && SL < -5) {
+	ChatMessage.create({
+		content: "You damage your target for " + totalheal + " wounds, and cause a Minor Infection."
+	});
+}
+else if (test.result.outcome === "failure" && totalheal < 0) {
+	ChatMessage.create({
+		content: "You damage your target for " + totalheal + " wounds"
+	});
+}
+else if (test.result.outcome === "success") {
+	ChatMessage.create({
+		content: "Your target heals " + totalheal + " wounds"
+	});
+}
+else {
+	ChatMessage.create({
+		content: "You fail but don't make it worse"
+	});
+}

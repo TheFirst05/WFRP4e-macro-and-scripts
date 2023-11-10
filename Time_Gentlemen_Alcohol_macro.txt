@@ -1,0 +1,186 @@
+/* 
+The stronger the drink the better the bonus (from no bonus to +10 per SL)
+For simplicity, only 5 major types of brews are defined.
+Rule 1: if you already have the same Alcohol Effect that gives a better bonus, you keep the best bonus. This encourages drinking even if you got a god roll.
+Rule 2: the above rule does not apply if you gain a different type of alcohol effect. If you drank Ale but now drink Beer, we assume you want the Beer bonus.
+*/
+let d = new Dialog({
+	title: "Determine Beverage",
+	content: `
+        <form class="flexcol">
+            <div class="form-group">
+                <label for="inputStrength">Alcohol Strength</label>
+                <div class="form-fields">
+					<select name="inputStrength">
+						<option value="weak">Weak</option>
+						<option value="average">Average</option>
+						<option value="strong">Strong</option>
+						<option value="strongest">Strongest</option>
+					</select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputType">Alcohol Type</label>
+                <div class="form-fields">
+                    <select name="inputType">
+					    <option value="Gossip">Beer (Gossip)</option>
+                        <option value="Consume Alcohol">Ale (Consume Alcohol)</option>
+                        <option value="Entertain">Mead (Entertain)</option>
+                        <option value="Charm">Wine (Charm)</option>
+                        <option value="Cool">Liquor (Cool)</option>
+                    </select>
+                </div>
+            </div>
+      </form>
+    `,
+	buttons: {
+		no: {
+			icon: '<i class="fas fa-times"></i>',
+			label: 'Cancel'
+		},
+		yes: {
+			icon: '<i class="fas fa-check"></i>',
+			label: 'Drink',
+			callback: (html) => {
+				const brewStrength = html.find('[name="inputStrength"]').val(); // determines the strength of the alcohol
+				const brewType = html.find('[name="inputType"]').val(); // determines the type of the alcohol, and thus the skill
+				console.log(brewStrength, brewType); // console check the correct input result
+
+				/*
+				below determines what effect the drink has
+				astrength determines the test difficulty (Easy +40, Average +20, etc...)
+				bstrength determines the modifier by which you modify the SL
+				*/
+
+				let astrength, bstrength;
+				switch (brewStrength) {
+					case "weak":
+						astrength = "easy"
+						bstrength = 0
+						break
+					case "average":
+						astrength = "average"
+						bstrength = 2
+						break
+					case "strong":
+						astrength = "challenging"
+						bstrength = 5
+						break
+					case "strongest":
+						astrength = "hard"
+						bstrength = 10
+						break
+					default:
+						astrength = "easy"
+						bstrength = 0
+				}
+
+				let resist = async function (actor) {
+					let test = await actor.setupSkill(game.i18n.translations.NAME.ConsumeAlcohol, { bypass: false, absolute: { difficulty: astrength } });
+
+					await test.roll();
+					let SL = test.result.SL
+
+					if (test.result.outcome == "failure") {
+						let moreDrunk = async function (actor) {   // moreDrunk to determine the Consume Alcohol effects
+							if (actor.hasSystemEffect("consumealcohol3")) {
+								let ca3 = actor.actorEffects.filter(e => e.conditionId == "consumealcohol3");
+								let failures = ca3.length + 3;
+								let id = ca3.find(e => e.disabled == false).id;
+								await actor.updateEmbeddedDocuments("ActiveEffect", [{ "_id": id, "disabled": true }]) // uses disabled consumealcohol3 as a counter to determine when stinking drunk applies.
+								actor.addSystemEffect("consumealcohol3");
+								if (actor.characteristics.t.bonus <= failures) {
+									game.tables.find(table => table.getFlag("wfrp4e", "key") == "stinking-drunk").draw();
+								}
+							} else if (actor.hasSystemEffect("consumealcohol2")) {
+								actor.removeSystemEffect("consumealcohol2");
+								actor.addSystemEffect("consumealcohol3");
+								if (actor.characteristics.t.bonus <= 3) {
+									game.tables.find(table => table.getFlag("wfrp4e", "key") == "stinking-drunk").draw();
+								}
+							} else if (actor.hasSystemEffect("consumealcohol1")) {
+								actor.removeSystemEffect("consumealcohol1");
+								actor.addSystemEffect("consumealcohol2");
+								if (actor.characteristics.t.bonus <= 2) {
+									game.tables.find(table => table.getFlag("wfrp4e", "key") == "stinking-drunk").draw();
+								}
+							} else {
+								actor.addSystemEffect("consumealcohol1");
+								if (actor.characteristics.t.bonus <= 1) {
+									game.tables.find(table => table.getFlag("wfrp4e", "key") == "stinking-drunk").draw();
+								}
+							}
+						};
+						moreDrunk(actor);
+					}
+
+					// an alcoholic effect will only be created if you drink an Average or Stronger brew.
+					else if (test.result.outcome == "success" && bstrength > 0) {
+						let alcoholeffect = async function (actor) { // function to create the effect
+
+							let hoursEffect = Number(SL) + 1;
+							let Strength = SL * bstrength; // determine bonus to the skill
+
+							const createEffect = async function (actor) { // create the function to call as necessary
+								actor.createEmbeddedDocuments("ActiveEffect", [{
+									name: "Alcohol Effect: " + brewType,
+									duration: {
+										seconds: 3600 + (SL * 3600)
+									},
+									flags: {
+										wfrp4e: {
+											effectApplication: "actor",
+											effectTrigger: "prefillDialog",
+											script: "if (args.item.type == \"skill\" && args.item.name.includes(\"" + brewType + "\"))\n{\n   args.prefillModifiers.modifier +=   " + Strength + "}"
+										}
+									},
+									icon: "icons/svg/tankard.svg"
+								}]
+								)
+							};
+
+							let oldeffect = myactor.effects.find(e => e.name.includes("Alcohol Effect"));
+							if (oldeffect) {
+								// if an older Alcohol effect exists, this will check its bonus and name and compare it with the current roll.
+								let oldValue = oldeffect.flags.wfrp4e.script.slice(-3, -1);
+								let partNum = Number(oldValue); // find the old value
+								let oldEffectName = oldeffect.name.substr(16, 20); // checks the name of the previous effect
+								console.log(Strength, partNum, oldEffectName);
+
+								if (Strength > partNum || oldEffectName != brewType) { // checks when to delete the previous effect
+									myactor.deleteEmbeddedDocuments("ActiveEffect", [oldeffect.id]);
+									createEffect(actor);
+									ChatMessage.create({
+										content: myactor.name + " gains +" + Strength + " to " + brewType + " for " + hoursEffect + " hours."
+									}); // this tells the player that you gained a bonus.
+								}
+							} else {
+								createEffect(actor);
+								ChatMessage.create({
+									content: myactor.name + " gains +" + Strength + " to " + brewType + " for " + hoursEffect + " hours."
+								}); // this tells the player that you gained a bonus.
+							}
+
+
+						};
+						alcoholeffect(actor);
+					}
+				}
+
+				let myspeaker = ChatMessage.getSpeaker();
+				let myactor;
+				if (speaker.token) myactor = game.actors.tokens[myspeaker.token];
+				if (!myactor) myactor = game.actors.get(myspeaker.actor);
+
+				if (myactor) {
+					resist(myactor);
+				};
+			}
+		},
+	},
+	default: 'yes',
+	close: () => {
+		console.log('Consume Alcohol Dialog Closed');
+	}
+});
+d.render(true)

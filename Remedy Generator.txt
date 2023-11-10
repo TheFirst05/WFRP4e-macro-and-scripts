@@ -1,0 +1,122 @@
+async function callback(html, event) {
+	const remedytype = event.currentTarget.dataset.button; // what remedy is it?
+
+	const remedyChance = await new Roll("1d100").evaluate(); // this roll determines if the remedy will be genuine or not.
+
+	// brassPrice determines the price of the remedy based on a roll.
+	// below the various variables of the remedy are determined depending on what remedy was chosen.
+
+	if (remedytype === "Malaise") {
+		var brassPrice = await new Roll("1d50+2").evaluate();
+		var imageIcon = "icons/commodities/materials/bowl-powder-gold.webp";
+		var remedyName = "Malaise Remedy";
+		var remedyDesc = 'This cures the malaise symptom.';
+		if (remedyChance.total > 75) {
+			var gmtag = "no effect"
+		}
+		else {
+			var gmtag = "genuine"
+		}
+	} else if (remedytype === "Nausea") {
+		var brassPrice = await new Roll("1d5+27").evaluate();
+		var imageIcon = "icons/commodities/materials/bowl-powder-yellow.webp";
+		var remedyName = "Nausea Remedy";
+		var remedyDesc = 'This cures the nausea symptom.';
+		if (remedyChance.total > 60) {
+			var gmtag = "no effect"
+		}
+		else {
+			var gmtag = "genuine"
+		}
+	} else if (remedytype === "Lingering") {
+		var brassPrice = await new Roll("1d8+5").evaluate();
+		var imageIcon = "icons/commodities/materials/bowl-powder-pink.webp";
+		var remedyName = "Lingering Remedy";
+		var remedyDesc = 'This cures the lingering symptom.';
+		if (remedyChance.total > 10) {
+			var gmtag = "no effect"
+		}
+		else {
+			var gmtag = "genuine"
+		}
+	} else if (remedytype === "Fever") {
+		var brassPrice = await new Roll("1d100+3").evaluate();
+		var imageIcon = "icons/commodities/materials/bowl-liquid-red.webp";
+		var remedyName = "Fever Remedy";
+		var remedyDesc = 'This cures the fever symptom.';
+		if (remedyChance.total > 10) {
+			var gmtag = "no effect"
+		}
+		else {
+			var gmtag = "genuine"
+		}
+	} else if (remedytype === "Flux") {
+		var brassPrice = await new Roll("1d100+3").evaluate();
+		var imageIcon = "icons/commodities/materials/bowl-powder-teal.webp";
+		var remedyName = "Flux Remedy";
+		var remedyDesc = 'This cures the flux symptom.';
+		if (remedyChance.total > 10) {
+			var gmtag = "no effect"
+		}
+		else {
+			var gmtag = "genuine"
+		}
+	} else if (remedytype === "Pox") {
+		var brassPrice = await new Roll("1d3+5").evaluate();
+		var imageIcon = "icons/commodities/materials/bowl-powder-blue.webp";
+		var remedyName = "Pox Remedy";
+		var remedyDesc = 'This cures the pox symptom.';
+		if (remedyChance.total > 90) {
+			var gmtag = "no effect"
+		}
+		else {
+			var gmtag = "genuine"
+		}
+	}
+
+	// below creates the item based on the variables defined above
+
+	var remedy = new ItemWfrp4e({
+		img: imageIcon,
+		name: remedyName,
+		type: "trapping",
+		system: {
+			availability: {
+				value: 'common'
+			},
+			description: {
+				value: remedyDesc
+			},
+			gmdescription: {
+				value: gmtag
+			},
+			price: {
+				bp: brassPrice.total
+			},
+			trappingType: {
+				value: "drugsPoisonsHerbsDraughts"
+			},
+		}
+	})
+
+	remedy.postItem(1);
+}
+
+const buttons = [
+	"Malaise",
+	"Nausea",
+	"Lingering",
+	"Fever",
+	"Flux",
+	"Pox"
+].reduce((acc, label) => {
+	acc[label] = { label: label.capitalize(), callback: callback };
+	return acc;
+}, {});
+
+const title = "Remedy Creator";
+const content = `
+<form>
+</form>`;
+
+new Dialog({ content, buttons, title }).render(true);

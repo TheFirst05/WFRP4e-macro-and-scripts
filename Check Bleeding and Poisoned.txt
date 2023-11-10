@@ -1,0 +1,25 @@
+// if the selected npc tokens have bleeding or poisoned, roll an endurance. if they fail, give them unconscious
+
+let bleedingnpc = canvas.tokens.controlled.filter(i=>i.actor.hasPlayerOwner==false && (i.actor.hasCondition("poisoned") || i.actor.hasCondition("bleeding")));
+
+bleedingnpc.forEach(anNpc => {
+  // do what you want with each of the bleedingnpc group, such as check they have they Endurance skill
+  let hasEndurance = game.gmtoolkit.utility.hasSkill(anNpc.actor, "Endurance", "silent")
+  if(hasEndurance != null) {
+    anNpc.actor.setupSkill("Endurance", {bypass: true}).then(setupData => {
+               anNpc.actor.basicTest(setupData).then(test => 
+            {
+            if(test.result.outcome == "failure")
+                    anNpc.actor.addCondition("unconscious")
+            })
+         })
+   } else {
+anNpc.actor.setupCharacteristic("t", {bypass: true}).then(setupData => {
+       anNpc.actor.basicTest(setupData).then(test => 
+        {
+            if(test.result.outcome == "failure")
+                    anNpc.actor.addCondition("unconscious")
+        })
+     })
+}
+})
