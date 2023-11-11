@@ -1,4 +1,4 @@
-let test = await actor.setupSkill(game.i18n.translations.NAME.Heal);
+let test = await actor.setupSkill(game.i18n.translations.NAME.Heal, {appendTitle: " to remove wounds"});
 await test.roll();
 
 let SL = test.result.SL;
