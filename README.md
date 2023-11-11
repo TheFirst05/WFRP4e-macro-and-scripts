@@ -9,5 +9,5 @@ Creates a randomised symptom remedy item that players can buy or drag onto their
 ## Heal wounds macro
 Creates a message that informs the players how many wounds they heal on a successful Heal Test.
 ## Check Bleeding and Poisoned
-Checks if selected NPC tokens fall unconscious or not if they are bleeding and on 0 wounds (or poisoned, houserule).
+Checks if selected NPC tokens fall unconscious or not if they are bleeding and on 0 wounds (checks for Poisoned as well, since we homebrewed it that way).
 
