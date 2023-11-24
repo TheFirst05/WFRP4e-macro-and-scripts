@@ -1,122 +1,139 @@
 async function callback(html, event) {
-	const remedytype = event.currentTarget.dataset.button; // what remedy is it?
+    const remedytype = event.currentTarget.dataset.button; // what remedy is it?
 
-	const remedyChance = await new Roll("1d100").evaluate(); // this roll determines if the remedy will be genuine or not.
+    const remedyChance = await new Roll("1d100").evaluate(); // this roll determines if the remedy will be genuine or not.
 
-	// brassPrice determines the price of the remedy based on a roll.
-	// below the various variables of the remedy are determined depending on what remedy was chosen.
+    // brassPrice determines the price of the remedy, usually based on a roll.
+    // below the various variables of the remedy are determined depending on what remedy was chosen.
 
-	if (remedytype === "Malaise") {
-		var brassPrice = await new Roll("1d50+2").evaluate();
-		var imageIcon = "icons/commodities/materials/bowl-powder-gold.webp";
-		var remedyName = "Malaise Remedy";
-		var remedyDesc = 'This cures the malaise symptom.';
-		if (remedyChance.total > 75) {
-			var gmtag = "no effect"
-		}
-		else {
-			var gmtag = "genuine"
-		}
-	} else if (remedytype === "Nausea") {
-		var brassPrice = await new Roll("1d5+27").evaluate();
-		var imageIcon = "icons/commodities/materials/bowl-powder-yellow.webp";
-		var remedyName = "Nausea Remedy";
-		var remedyDesc = 'This cures the nausea symptom.';
-		if (remedyChance.total > 60) {
-			var gmtag = "no effect"
-		}
-		else {
-			var gmtag = "genuine"
-		}
-	} else if (remedytype === "Lingering") {
-		var brassPrice = await new Roll("1d8+5").evaluate();
-		var imageIcon = "icons/commodities/materials/bowl-powder-pink.webp";
-		var remedyName = "Lingering Remedy";
-		var remedyDesc = 'This cures the lingering symptom.';
-		if (remedyChance.total > 10) {
-			var gmtag = "no effect"
-		}
-		else {
-			var gmtag = "genuine"
-		}
-	} else if (remedytype === "Fever") {
-		var brassPrice = await new Roll("1d100+3").evaluate();
-		var imageIcon = "icons/commodities/materials/bowl-liquid-red.webp";
-		var remedyName = "Fever Remedy";
-		var remedyDesc = 'This cures the fever symptom.';
-		if (remedyChance.total > 10) {
-			var gmtag = "no effect"
-		}
-		else {
-			var gmtag = "genuine"
-		}
-	} else if (remedytype === "Flux") {
-		var brassPrice = await new Roll("1d100+3").evaluate();
-		var imageIcon = "icons/commodities/materials/bowl-powder-teal.webp";
-		var remedyName = "Flux Remedy";
-		var remedyDesc = 'This cures the flux symptom.';
-		if (remedyChance.total > 10) {
-			var gmtag = "no effect"
-		}
-		else {
-			var gmtag = "genuine"
-		}
-	} else if (remedytype === "Pox") {
-		var brassPrice = await new Roll("1d3+5").evaluate();
-		var imageIcon = "icons/commodities/materials/bowl-powder-blue.webp";
-		var remedyName = "Pox Remedy";
-		var remedyDesc = 'This cures the pox symptom.';
-		if (remedyChance.total > 90) {
-			var gmtag = "no effect"
-		}
-		else {
-			var gmtag = "genuine"
-		}
-	}
+    let brassPrice, imageIcon, remedyName, remedyDesc, gmtag;
 
-	// below creates the item based on the variables defined above
+    switch (remedytype) {
+        case "Malaise":
+            brassPrice = await new Roll("1d50+2").evaluate();
+            imageIcon = "icons/commodities/materials/bowl-powder-gold.webp";
+            remedyName = "Malaise Remedy";
+            remedyDesc = 'Make a Challenging Endurance Test to ignore the symptom for the day.';
+            if (remedyChance.total > 75) {
+                gmtag = "no effect"
+            }
+            else {
+                gmtag = "genuine"
+            }
+            break
+        case "Nausea":
+            brassPrice = await new Roll("1d5+27").evaluate();
+            imageIcon = "icons/commodities/materials/bowl-powder-yellow.webp";
+            remedyName = "Nausea Remedy";
+            remedyDesc = 'If genuine, make a Challenging Endurance Test to ignore the symptoms for TB hours.';
+            if (remedyChance.total > 60) {
+                gmtag = "no effect"
+            }
+            else {
+                gmtag = "genuine"
+            }
+            break
+        case "Lingering":
+            brassPrice = await new Roll("1d8+5").evaluate();
+            imageIcon = "icons/commodities/materials/bowl-powder-pink.webp";
+            remedyName = "Lingering Remedy";
+            remedyDesc = 'If genuine, allows the patient to negate the need to roll the Endurance Test if taken on the last day (determined via a Heal Test).';
+            if (remedyChance.total > 10) {
+                gmtag = "no effect"
+            }
+            else {
+                gmtag = "genuine"
+            }
+            break
+        case "Fever":
+            brassPrice = await new Roll("1d100+3").evaluate();
+            imageIcon = "icons/commodities/materials/bowl-liquid-red.webp";
+            remedyName = "Fever Remedy";
+            remedyDesc = 'If genuine, make a Challenging Endurance Test to clear a non-severe Fever.';
+            if (remedyChance.total > 10) {
+                gmtag = "no effect"
+            }
+            else {
+                gmtag = "genuine"
+            }
+            break
+        case "Flux":
+            brassPrice = await new Roll("1d100+3").evaluate();
+            imageIcon = "icons/commodities/materials/bowl-powder-teal.webp";
+            remedyName = "Flux Remedy";
+            remedyDesc = 'If genuine, ignore the symptoms for TB hours.';
+            if (remedyChance.total > 10) {
+                gmtag = "no effect"
+            }
+            else {
+                gmtag = "genuine"
+            }
+            break
+        case "Pox":
+            brassPrice = await new Roll("1d3+5").evaluate();
+            imageIcon = "icons/commodities/materials/bowl-powder-blue.webp";
+            remedyName = "Pox Remedy";
+            remedyDesc = 'If genuine, the test to ignore the scratching is a +60 Cool Test (but you look unsightly. This is a week\'s worth of cream.';
+            if (remedyChance.total > 90) {
+                gmtag = "no effect"
+            }
+            else {
+                gmtag = "genuine"
+            }
+            break
+    }
 
-	var remedy = new ItemWfrp4e({
-		img: imageIcon,
-		name: remedyName,
-		type: "trapping",
-		system: {
-			availability: {
-				value: 'common'
-			},
-			description: {
-				value: remedyDesc
-			},
-			gmdescription: {
-				value: gmtag
-			},
-			price: {
-				bp: brassPrice.total
-			},
-			trappingType: {
-				value: "drugsPoisonsHerbsDraughts"
-			},
-		}
-	})
+    // below creates the item based on the variables defined above
 
-	remedy.postItem(1);
+    var remedy = new ItemWfrp4e({
+        img: imageIcon,
+        name: remedyName,
+        type: "trapping",
+        system: {
+            availability: {
+                value: 'common'
+            },
+            description: {
+                value: remedyDesc
+            },
+            gmdescription: {
+                value: gmtag
+            },
+            price: {
+                bp: brassPrice.total
+            },
+            trappingType: {
+                value: "drugsPoisonsHerbsDraughts"
+            },
+        }
+    })
+
+    remedy.postItem(1);
 }
 
 const buttons = [
-	"Malaise",
-	"Nausea",
-	"Lingering",
-	"Fever",
-	"Flux",
-	"Pox"
+    "Malaise",
+    "Nausea",
+    "Lingering",
+    "Fever",
+    "Flux",
+    "Pox"
 ].reduce((acc, label) => {
-	acc[label] = { label: label.capitalize(), callback: callback };
-	return acc;
+    acc[label] = { label: label.capitalize(), callback: callback };
+    return acc;
 }, {});
 
 const title = "Remedy Creator";
-const content = `
-<form>
-</form>`;
+const content = `<style>
+    #conditions-dialog .dialog-buttons {
+        display: grid;
+        gap: 1em;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    #conditions-dialog .button-image {
+        max-width: 100px;
+        max-height: 100px;
+    }
+  </style>`;
 
-new Dialog({ content, buttons, title }).render(true);
+new Dialog({ content, buttons, title }, { id: "conditions-dialog", width: "auto !important", height: "auto !important" }).render(true);
