@@ -1,0 +1,118 @@
+if (!actor) {
+    ui.notifications.warn('You need to select a token before using this macro!');
+    return
+} else {
+
+    let d = new Dialog({
+        title: "Pursuit",
+        content: `
+        <form class="flexcol">
+            <div class="form-group">
+                <label>Flee!</label>
+                    <input type="checkbox" name="useFlee" value="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Sprinter</label>
+                    <input type="checkbox" name="useSprinter" value="2">
+                </div>
+            </div>
+        </div>
+      </form>
+    `,
+        buttons: {
+            no: {
+                icon: '<i class="fas fa-times"></i>',
+                label: 'Cancel'
+            },
+            yes: {
+                icon: '<i class="fas fa-check"></i>',
+                label: 'Pursue',
+                callback: (html) => {
+
+                    // does the player want to use the Flee! or Sprinter talents?
+                    const usingFlee = html.find('[name="useFlee"]').is(':checked');
+                    const usingSprinter = html.find('[name="useSprinter"]').is(':checked');
+
+                    let fleeValue = 0;
+                    let sprinterValue = 0; // these values let us increase the speed of the runner
+
+
+
+                    const chase = async function (actor) {
+
+                        // check if actor has flee or Sprinter
+                        const hasFlee = token.actor.items.find(i => i.name.includes("Flee!"));
+                        const hasSprinter = token.actor.items.find(i => i.name.includes("Sprinter"));
+
+                        if (usingFlee && hasFlee) {
+                            fleeValue = 1
+                        }
+                        if (usingSprinter && hasSprinter) {
+                            sprinterValue = 1
+                        }
+
+                        // determine speed (checks for runSpeed to allow for factors like Stride)
+                        let speed = actor.system.details.move.value + fleeValue + sprinterValue; // total speed
+                        let runSpeed = actor.system.details.move.run + ((fleeValue + sprinterValue) * 4); // total run
+
+                        let speedmod; // determine the difficulty of the test
+                        if (speed >= 4) {
+                            speedmod = "average"
+                        } else if (speed = 3) {
+                            speedmod = "challenging"
+                        } else if (speed = 2) {
+                            speedmod = "hard"
+                        } else if (speed = 1) {
+                            speedmod = "very hard"
+                        }
+
+                        let test = await actor.setupSkill("Athletics", { bypass: false, absolute: { difficulty: speedmod } });
+                        await test.roll();
+
+                        let SL = test.result.SL;
+                        let testOutcome = test.result.outcome;
+                        let totalMoved;
+                        let distanceMoved = Math.floor(runSpeed / 10);
+
+                        if (SL >= 4) {
+                            totalMoved = distanceMoved + 1;
+                        } else if (testOutcome = "success" && SL < 4 && SL >= 0) {
+                            totalMoved = distanceMoved;
+                        } else if (testOutcome = "failure" && SL >= -2) {
+                            console.log("look here")
+                            totalMoved = distanceMoved - 1;
+                        }
+
+                        if (testOutcome = "success" && SL >= 0) {
+                            ChatMessage.create({
+                                content: actor.name + " sprints forward " + totalMoved + " square(s)."
+                            });
+                        } else if (testOutcome = "failure" && SL >= -2) {
+                            ChatMessage.create({
+                                content: actor.name + "  is blocked, needs to navigate an object, or must watch their footing for some reason. They stumble forward " + totalMoved + " square(s)."
+                            });
+                        } else if (SL == -3 || SL == -4) {
+                            ChatMessage.create({
+                                content: actor.name + " skids to a halt to avoid a stumble. They make no progress this round."
+                            });
+                        } else {
+                            ChatMessage.create({
+                                content: actor.name + " trips, falls, or suffers a similar calamity. Suffer Falling damage (if applicable). They are prone, and must spend the next turn standing up."
+                            });
+                        }
+
+                    };
+                    chase(actor);
+
+                }
+
+            },
+        },
+        default: 'no',
+        close: () => {
+            console.log('Dialog closed');
+        }
+    });
+    d.render(true)
+}
