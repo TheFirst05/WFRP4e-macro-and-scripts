@@ -1,17 +1,22 @@
 // Does not increase advantage over 10. change "bypass: false" to "bypass: true" if you want to bypass the roll dialog.
-const assess = async function (actor) {
-    let hasIntuition = game.gmtoolkit.utility.hasSkill(actor, "Intuition", "silent")
-    if (hasIntuition != null) {
-        var test = await actor.setupSkill(game.i18n.translations.NAME.Intuition, { bypass: false, appendTitle: " to Assess" });
-    } else {
-        var test = await actor.setupCharacteristic("i", { bypass: false, appendTitle: " to Assess" })
+if (!actor) {
+    return ui.notifications.warn('You need to select a token before using this macro!');
+} else {
+    const assess = async function (actor) {
+        let hasIntuition = game.gmtoolkit.utility.hasSkill(actor, "Intuition", "silent")
+        let test;
+        if (hasIntuition != null) {
+            test = await actor.setupSkill(game.i18n.translations.NAME.Intuition, { bypass: false, appendTitle: " to Assess" });
+        } else {
+            test = await actor.setupCharacteristic("i", { bypass: false, appendTitle: " to Assess" })
+        }
+        await test.roll();
+        let SL = test.result.SL;
+        if (SL > 5) {
+            actor.modifyAdvantage(3);
+        } else if (test.result.outcome == "success") {
+            actor.modifyAdvantage(2);
+        };
     }
-    await test.roll();
-    let SL = test.result.SL;
-    if (SL > 5) {
-        actor.modifyAdvantage(3);
-    } else if (test.result.outcome == "success") {
-        actor.modifyAdvantage(2);
-    };
-} 
-assess(actor);
+    assess(actor);
+}
