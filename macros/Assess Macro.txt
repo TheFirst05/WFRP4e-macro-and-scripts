@@ -1,10 +1,10 @@
-// Does not increase advantage over 10. change bypass to false if you want to be able to modify the roll dialog.
+// Does not increase advantage over 10. change "bypass: false" to "bypass: true" if you want to bypass the roll dialog.
 const assess = async function (actor) {
     let hasIntuition = game.gmtoolkit.utility.hasSkill(actor, "Intuition", "silent")
     if (hasIntuition != null) {
-        var test = await actor.setupSkill(game.i18n.translations.NAME.Intuition, { bypass: true, appendTitle: " to Assess" });
+        var test = await actor.setupSkill(game.i18n.translations.NAME.Intuition, { bypass: false, appendTitle: " to Assess" });
     } else {
-        var test = await actor.setupCharacteristic("i", { bypass: true, appendTitle: " to Assess" })
+        var test = await actor.setupCharacteristic("i", { bypass: false, appendTitle: " to Assess" })
     }
     await test.roll();
     let SL = test.result.SL;
