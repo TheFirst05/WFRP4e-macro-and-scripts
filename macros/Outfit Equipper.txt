@@ -1,0 +1,86 @@
+if (!actor) {
+    ui.notifications.warn("No actor selected, please select a token");
+    return;
+}
+
+
+let d = new Dialog({
+    title: "Select Outfit",
+    content: `
+        <form class="flexcol">
+            <div class="form-group">
+                <label for="selectOutfit">Select Outfit</label>
+                <div class="form-fields">
+                  <select name="selectOutfit">
+                    <option value="outfit1">Outfit 1</option>
+                    <option value="outfit2">Outfit 2</option>
+                    <option value="outfit3">Outfit 3</option>
+                  </select>
+                </div>
+                </div>
+            </div>
+      </form>
+    `,
+    buttons: {
+        no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: 'Cancel'
+        },
+        yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: 'Confirm',
+            callback: (html) => {
+                const Outfitselected = html.find('[name="selectOutfit"]').val();
+                const outfitIds = actor.getFlag("world", Outfitselected); //defines the selected outfit IDs from the dialog box
+
+                // Find all the items saved in the various outfits.
+                const outfit1 = actor.getFlag("world", "outfit1");
+                const outfit2 = actor.getFlag("world", "outfit2");
+                const outfit3 = actor.getFlag("world", "outfit3");
+
+                //merge the arrays together.
+                const outfitOneTwo = outfit1.concat(outfit2);
+                const outfitall = outfitOneTwo.concat(outfit3);
+
+                const container = actor.getFlag("world", "outfitContainer");
+                if (container === undefined || container === null || !outfitIds?.length) {
+                    ui.notifications.warn(
+                        "No saved container or outfit set. Run the Outfit Setter macro."
+                    );
+                    return;
+                } // failsafe
+
+                const allClothes = actor.itemTypes.trapping.filter(i => i.system.trappingType.value == "clothingAccessories"); // finds all items
+                const outfitRemove = allClothes.filter((a) => outfitall.includes(a.id)); // filters for all outfits clothes saved
+                const newOutfit = allClothes.filter((a) => outfitIds.includes(a.id)); // filters for the new outfit
+                let otherClothes = outfitRemove.filter(x => !newOutfit.includes(x)); // filters for the other clothes to remove
+
+                const updatesadd = newOutfit.map((a) => {
+                    return {
+                        _id: a.id,
+                        "system.worn": "true",
+                        "system.location.value": 0,
+                    };
+                });
+                actor.updateEmbeddedDocuments("Item", updatesadd); // update the new outfit to wear and take out of container
+
+                const updatesremove = otherClothes.map((a) => {
+                    return {
+                        _id: a.id,
+                        "system.worn": "false",
+                        "system.location.value": container,
+                    };
+                });
+                actor.updateEmbeddedDocuments("Item", updatesremove); // update the remaining clothes to be not worn.
+
+                ui.notifications.info("New outfit equiped");
+
+            }
+        },
+    },
+    default: 'yes',
+    close: () => {
+        console.log('Close dialog');
+    }
+});
+d.render(true)

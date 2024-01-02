@@ -1,0 +1,80 @@
+if (!actor) {
+  ui.notifications.warn("No actor selected, please select a token");
+  return;
+}
+
+const containers = actor.itemTypes.container;
+
+const clothingInputs = actor.itemTypes.trapping.filter(i => i.system.trappingType.value == "clothingAccessories")
+  .map(
+    (a, i) => `<div class="form-group">
+      <label for="${a.id}">${a.name}</label>
+      <input type="checkbox" value="${a.id}" id="${a.id}" ${a.worn.value ? "checked" : ""
+      }>
+      ${i + 1 === actor.itemTypes.trapping.filter(i => i.system.trappingType.value == "clothingAccessories").length
+        ? `<p class="notes">
+          Only selected outfits will be managed. Equipped outfits that are not
+          selected will stay equipped when toggling the set. </p>`
+        : ""
+      }
+    </div>`
+  )
+  .join("");
+const containerInputs = containers
+  .map((c) => `<option value="${c.id}">${c.name}</option>`)
+  .join("");
+
+function setContainer(html) {
+  const container = $(html).find("select[name=container]").val() || 0;
+  const outfitselector = html.find('[name="outfitSet"]').val();
+  const outfit = $(html)
+    .find("input:checkbox:checked")
+    .map((_, e) => $(e).val())
+    .get();
+  actor.setFlag("world", outfitselector, outfit);
+  actor.setFlag("world", "outfitContainer", container);
+}
+
+const chooser = new Dialog({
+  title: "Create Outfit Set",
+  content: `<form>
+      <h3>Choose Outfit Set</h3>
+       <div class="form-group">
+          <label for="outfitSet">Outfit Set</label>
+                <div class="form-fields">
+					        <select name="outfitSet">
+						<option value="outfit1">Outfit 1</option>
+						<option value="outfit2">Outfit 2</option>
+						<option value="outfit3">Outfit 3</option>
+					</select>
+                </div>
+            </div>
+      <h3>Choose Outfit</h3>
+      ${clothingInputs}
+      <h3>Choose Container</h3>
+      <div class="form-group">
+        <label for="container">Container</label>
+        <div class="form-fields">
+          <select name="container">
+            <option value="">NONE</option>
+            ${containerInputs}
+          </select>
+        </div>
+        <p class="notes">Choose the container where the outfit will be stored when removed. 
+        I suggest you use the same container for all your outfits. I wont take blame if it breaks.</p>
+      </div>
+    </form>`,
+  buttons: {
+    cancel: {
+      icon: '<i class="fas fa-times"></i>',
+      label: "Cancel",
+    },
+    confirm: {
+      icon: '<i class="fas fa-check"></i>',
+      label: "Confirm",
+      callback: setContainer,
+    },
+  },
+  default: "cancel",
+});
+chooser.render(true);
